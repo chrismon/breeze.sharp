@@ -27,18 +27,32 @@ namespace Breeze.Sharp {
     /// 
     /// </summary>
     /// <param name="serviceName"></param>
-    public DataService(String serviceName) {
-      if (String.IsNullOrEmpty(serviceName)) {
-        throw new ArgumentNullException("serviceName");
-      }
-      ServiceName = serviceName;
-      HasServerMetadata = true;
-      UseJsonP = false;
-      Adapter = new WebApiDataServiceAdapter();
-      JsonResultsAdapter = Adapter.JsonResultsAdapter;
-      InitializeHttpClient();
+    public DataService(String serviceName, HttpClientHandler handler) {
+        InitializeDataService(serviceName, handler);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="serviceName"></param>
+    public DataService(String serviceName) {
+        InitializeDataService(serviceName, new HttpClientHandler());
+    }
+
+    private void InitializeDataService(String serviceName, HttpClientHandler handler)
+    {
+        if (String.IsNullOrEmpty(serviceName))
+        {
+            throw new ArgumentNullException("serviceName");
+        }
+        ServiceName = serviceName;
+        HasServerMetadata = true;
+        UseJsonP = false;
+        Adapter = new WebApiDataServiceAdapter();
+        JsonResultsAdapter = Adapter.JsonResultsAdapter;
+        InitializeHttpClient(handler);
+    }
+      
     /// <summary>
     /// For internal use only.
     /// </summary>
@@ -51,8 +65,7 @@ namespace Breeze.Sharp {
       Adapter = GetAdapter(jNode.Get<String>("adapterName"));
       // TODO: need to do the same as above with JsonResultsAdapter.
       JsonResultsAdapter = Adapter.JsonResultsAdapter;
-      InitializeHttpClient();
-
+      InitializeHttpClient(new HttpClientHandler());
     }
 
     /// <summary>
@@ -63,16 +76,14 @@ namespace Breeze.Sharp {
       get { return _httpClient; }
     }
 
-    private void InitializeHttpClient() {
-      _httpClient = new HttpClient();
+    private void InitializeHttpClient(HttpClientHandler handler) {
+      _httpClient = new HttpClient(handler);
       _httpClient.BaseAddress = new Uri(ServiceName);
 
       // Add an Accept header for JSON format.
       _httpClient.DefaultRequestHeaders.Accept.Add(
         new MediaTypeWithQualityHeaderValue("application/json"));
-
     }
-
     private IDataServiceAdapter GetAdapter(string adapterName) {
       // TODO: fix this later using some form of DI
       return new WebApiDataServiceAdapter();
